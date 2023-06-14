@@ -136,6 +136,7 @@ func (m *Machine) setF(inState, outState int) {
 func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool, n_noncontinue_chars int) [](*Term) {
 	terms := make([](*Term), 0)
 
+    prev_state := ROOT_STATE
 	state := ROOT_STATE
 	noncontion_char_size := 0
 	for pos, c := range content {
@@ -143,6 +144,7 @@ func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool, n_n
 		if m.g(state, c) == FAIL_STATE {
 			if noncontion_char_size < n_noncontinue_chars {
 				noncontion_char_size += 1
+                state = prev_state
 				continue
 			}
 			state = m.f(state)
