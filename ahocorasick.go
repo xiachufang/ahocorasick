@@ -133,74 +133,49 @@ func (m *Machine) setF(inState, outState int) {
 	m.failure[inState] = outState
 }
 
-func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool, n_noncontinue_chars int) [](*Term) {
+func (m *Machine) MultiPatternSearch(
+	content []rune,
+	returnImmediately bool,
+	NoncontinueChars int,
+) [](*Term) {
 	terms := make([](*Term), 0)
-
-	state := ROOT_STATE
-	prev_state := state
-	reset_pos := 0
-	has_noncontinue := false
-	noncontion_char_size := 0
-	pos := 0
-	for pos < len(content) {
-	start:
-		c := content[pos]
-		if !has_noncontinue {
-			reset_pos = pos
-		}
-		if m.g(state, c) == FAIL_STATE {
-			// if enable noncontinue matcher, then try to max matcher
-			if noncontion_char_size < n_noncontinue_chars && state != ROOT_STATE {
-				has_noncontinue = true
-				noncontion_char_size += 1
-				state = prev_state
-				pos += 1
-				if pos >= len(content) {
-					state = ROOT_STATE
-					pos = reset_pos
-					has_noncontinue = false
-					goto start
-				}
-				continue
-			}
-			// if failed, then try back to reset pos
-			if reset_pos > 0 {
-				state = ROOT_STATE
-				pos = reset_pos
-				noncontion_char_size = 1
-				has_noncontinue = false
+	var searchStates [](*SearchState)
+	var latestStates [](*SearchState)
+	for pos, c := range content {
+		var newLatestStates [](*SearchState)
+		latestStates = append(latestStates, &SearchState{State: ROOT_STATE, Pos: pos})
+		for _, State := range latestStates {
+			state := State.State
+		start:
+			if m.g(state, c) == FAIL_STATE {
+				state = m.f(state)
 				goto start
 			}
-			state = m.f(state)
-			pos += 1
-			goto start
-		} else {
 			state = m.g(state, c)
-			prev_state = state
-			noncontion_char_size = 0
-			if val, ok := m.output[state]; ok != false {
-				for _, word := range val {
-					term := new(Term)
-					term.Pos = pos - len(word) + 1 - noncontion_char_size
-					term.Word = word
-					terms = append(terms, term)
-					if returnImmediately {
-						return terms
-					}
-				}
-				if reset_pos > 0 {
-					state = ROOT_STATE
-					pos = reset_pos
-					has_noncontinue = false
-					goto start
-				}
-				state = m.f(state)
-				continue
+			State.Chars = append(State.Chars, c)
+			if state != ROOT_STATE {
+				searchStates = append(searchStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
+				newLatestStates = append(newLatestStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
+			}
+			if State.Pos < pos && pos-State.Pos <= NoncontinueChars {
+				newLatestStates = append(newLatestStates, State)
 			}
 		}
-		pos += 1
+		latestStates = newLatestStates
 	}
-
+	for _, searchState := range searchStates {
+		if val, ok := m.output[searchState.State]; ok != false {
+			for _, word := range val {
+				term := new(Term)
+				term.Pos = searchState.Pos - len(searchState.Chars) + 1
+				term.Word = word
+				terms = append(terms, term)
+				if returnImmediately {
+					return terms
+				}
+			}
+		}
+	}
 	return terms
 }
 
