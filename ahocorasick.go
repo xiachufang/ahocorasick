@@ -145,9 +145,9 @@ func (m *Machine) MultiPatternSearch(
 	NoncontinueChars int,
 ) [](*Term) {
 	terms := make([](*Term), 0)
-	var searchStates [](*SearchState)
 	var latestStates [](*SearchState)
 	for pos, c := range content {
+		var searchStates [](*SearchState)
 		var newLatestStates [](*SearchState)
 		latestStates = append(latestStates, &SearchState{State: ROOT_STATE, Pos: pos})
 		for _, State := range latestStates {
@@ -168,16 +168,19 @@ func (m *Machine) MultiPatternSearch(
 			}
 		}
 		latestStates = newLatestStates
-	}
-	for _, searchState := range searchStates {
-		if val, ok := m.output[searchState.State]; ok != false {
-			for _, word := range val {
-				term := new(Term)
-				term.Pos = searchState.Pos - len(searchState.Chars) + 1
-				term.Word = word
-				terms = append(terms, term)
-				if returnImmediately {
-					return terms
+		if len(latestStates) > 100 {
+			returnImmediately = true
+		}
+		for _, searchState := range searchStates {
+			if val, ok := m.output[searchState.State]; ok != false {
+				for _, word := range val {
+					term := new(Term)
+					term.Pos = searchState.Pos - len(searchState.Chars) + 1
+					term.Word = word
+					terms = append(terms, term)
+					if returnImmediately {
+						return terms
+					}
 				}
 			}
 		}
