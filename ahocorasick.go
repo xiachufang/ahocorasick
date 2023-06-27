@@ -149,6 +149,7 @@ func (m *Machine) MultiPatternSearch(
 	for pos, c := range content {
 		var searchStates [](*SearchState)
 		var newLatestStates [](*SearchState)
+		states := map[int]bool{}
 		latestStates = append(latestStates, &SearchState{State: ROOT_STATE, Pos: pos})
 		for _, State := range latestStates {
 			state := State.State
@@ -159,6 +160,12 @@ func (m *Machine) MultiPatternSearch(
 			}
 			state = m.g(state, c)
 			State.Chars = append(State.Chars, c)
+
+			if _, ok := states[state]; ok {
+				continue
+			}
+			states[state] = true
+
 			if state != ROOT_STATE {
 				searchStates = append(searchStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
 				newLatestStates = append(newLatestStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
@@ -168,9 +175,6 @@ func (m *Machine) MultiPatternSearch(
 			}
 		}
 		latestStates = newLatestStates
-		if len(latestStates) > 100 {
-			returnImmediately = true
-		}
 		for _, searchState := range searchStates {
 			if val, ok := m.output[searchState.State]; ok != false {
 				for _, word := range val {
