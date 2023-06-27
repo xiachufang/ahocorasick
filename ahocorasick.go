@@ -161,17 +161,14 @@ func (m *Machine) MultiPatternSearch(
 			state = m.g(state, c)
 			State.Chars = append(State.Chars, c)
 
-			if _, ok := states[state]; ok && State.Pos == pos {
-				continue
-			}
-			states[state] = true
-
-			if state != ROOT_STATE {
-				searchStates = append(searchStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
-				newLatestStates = append(newLatestStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
-			}
 			if State.Pos < pos && pos-State.Pos <= NoncontinueChars {
 				newLatestStates = append(newLatestStates, State)
+			}
+
+			if _, ok := states[state]; !ok && state != ROOT_STATE {
+				searchStates = append(searchStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
+				newLatestStates = append(newLatestStates, &SearchState{State: state, Pos: pos, Chars: State.Chars})
+				states[state] = true
 			}
 		}
 		latestStates = newLatestStates
