@@ -161,7 +161,7 @@ func (m *Machine) MultiPatternSearch(
 			state = m.g(state, c)
 			State.Chars = append(State.Chars, c)
 
-			if _, ok := states[state]; ok {
+			if _, ok := states[state]; ok && State.Pos == pos {
 				continue
 			}
 			states[state] = true
